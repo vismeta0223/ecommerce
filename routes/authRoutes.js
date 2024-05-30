@@ -8,7 +8,7 @@ router.post('/login', loginUserCtrl);
 router.get('/all-users', getallUser);
 router.get('/refresh', handleRefreshToken);
 router.get('/:id', authMiddleware, isAdmin, getaUser);
-router.get('/logout', logout);
+router.post('/logout', logout);
 router.delete('/:id', deletedUser);
 router.put('/edit', authMiddleware, updatedUser);
 router.put('/block/:id', authMiddleware, isAdmin, blockUser);
