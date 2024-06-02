@@ -4,6 +4,8 @@ const asyncHandler = require("express-async-handler");
 const  validateMongoDbId  = require("../utils/validateMongodbId");
 const { generateRefreshToken } = require("../config/refreshToken");
 const jwt = require("jsonwebtoken");
+const { text } = require("body-parser");
+const { sendEmail } = require("./emailCtrl");
 
 // create a user
 const createUser = asyncHandler(async (req, res) => {
@@ -212,6 +214,45 @@ res.json({
     throw new Error(error);
 }});
 
+//Update or Change Password
+const updatePassword = asyncHandler(async(req, res) => {
+    const {id} = req.user;
+    validateMongoDbId(id);
+    const {password} = req.body;
+    const user = await User.findById(id);
+    if (password) {
+        user.password = password;
+        const updatedPassword = await user.save();
+        res.json({
+            message: "Password Updated",
+            updatedPassword,
+        });
+    }else {
+        res.json(user);
+    }
+});
+
+//Generate Forgot Password Token
+const forgotPasswordToken = asyncHandler(async(req, res) => {
+    const {email} = req.body;
+    const user = await User.findOne({email});
+    if (!user) throw new Error("No User Found");
+    try {
+        const token = await user.createPasswordResetToken();
+        await user.save({validateBeforeSave: false});
+        const resetUrl = `Hi, Please click on this link to reset your password, This link will be valid for 5 minutes: <a href='http://localhost:5000/api/user/password/${token}' >Click Here</a>`;
+        const data = {
+            text: "Hey GAY person",
+            to: email,
+            subject: "Reset Password",
+            htm: resetUrl,
+        };
+        sendEmail(data);
+        res.json(token);
+    } catch (error) {
+        
+    }
+});
 
 module.exports = { 
     createUser, 
@@ -224,4 +265,6 @@ module.exports = {
     unblockUser,
     handleRefreshToken,
     logout,
+    updatePassword,
+    forgotPasswordToken,
 };
